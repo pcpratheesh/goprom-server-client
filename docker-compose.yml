@@ -1,0 +1,54 @@
+version: '3'
+services:
+  sender:
+    build:
+      context: .
+      dockerfile: Dockerfile.sender
+    environment:
+      APP_NAME: "sender-xyz"
+      RECEIVER_HOST: http://receiver:8002/
+    ports:
+      - 8001:8001
+    networks:
+      - prometheus-measure-network
+ 
+  receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile.receiver
+    ports:
+      - 8002:8002
+    networks:
+      - prometheus-measure-network
+  
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus:/prometheus/data
+
+    ports:
+      - 9090:9090
+    depends_on:
+      - receiver
+    networks:
+      - prometheus-measure-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - 3000:3000
+    depends_on:
+      - prometheus
+    networks:
+      - prometheus-measure-network
+    volumes:
+    - grafana-storage:/var/lib/grafana
+      
+networks:
+  prometheus-measure-network:
+
+volumes:
+  grafana-storage:
